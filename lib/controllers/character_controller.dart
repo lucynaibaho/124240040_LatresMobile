@@ -15,6 +15,7 @@ class CharacterController extends GetxController {
   final RxnString selectedStatus = RxnString();
   final RxString query = ''.obs;
   Timer? _searchTimer;
+  int _loadRequestId = 0;
 
   @override
   void onInit() {
@@ -35,19 +36,19 @@ class CharacterController extends GetxController {
   }
 
   Future<void> loadCharacters() async {
+    final requestId = ++_loadRequestId;
     isLoading.value = true;
     errorMessage.value = '';
     try {
-      characters.assignAll(
-        await _apiService.fetchCharacters(
-          status: selectedStatus.value,
-          name: query.value,
-        ),
+      final results = await _apiService.fetchCharacters(
+        status: selectedStatus.value,
+        name: query.value,
       );
+      if (requestId == _loadRequestId) characters.assignAll(results);
     } on Object catch (error) {
-      errorMessage.value = error.toString();
+      if (requestId == _loadRequestId) errorMessage.value = error.toString();
     } finally {
-      isLoading.value = false;
+      if (requestId == _loadRequestId) isLoading.value = false;
     }
   }
 
